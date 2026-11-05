@@ -9,11 +9,10 @@ From this directory:
 ```sh
 npm install
 cp .env.example .env
-npm run hash-password
 npm run dev
 ```
 
-Paste the generated `ADMIN_PASSWORD_HASH` into `.env`; choose an `ADMIN_USERNAME` and a random `AUTH_SECRET` of at least 32 characters. Configure the GitHub values below to connect a repository. For uploads, configure a Vercel Blob read/write token as well; Blob is used only as private, temporary staging because GitHub credentials and large file bytes must not pass through the browser or a small JSON request. The GitHub repository remains the permanent source of truth.
+Set an `ADMIN_USERNAME` (the user ID used to sign in) and a random `AUTH_SECRET` of at least 32 characters. Configure the GitHub values below to connect a repository. For uploads, configure a Vercel Blob read/write token as well; Blob is used only as private, temporary staging because GitHub credentials and large file bytes must not pass through the browser or a small JSON request. The GitHub repository remains the permanent source of truth.
 
 The app is served at `http://localhost:5173`. Without GitHub settings, the app can start and display the setup error, but cannot load or change repository media.
 
@@ -21,8 +20,7 @@ The app is served at `http://localhost:5173`. Without GitHub settings, the app c
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `ADMIN_USERNAME` | Yes | Single admin login name |
-| `ADMIN_PASSWORD_HASH` | Yes | `scrypt$<salt>$<hex digest>`; generate with `npm run hash-password` |
+| `ADMIN_USERNAME` | Yes | Single admin user ID; this is the only login credential |
 | `AUTH_SECRET` | Yes | Random signing key, at least 32 characters |
 | `GITHUB_TOKEN` | Yes | Fine-grained token restricted to the media repo |
 | `GITHUB_OWNER` | Yes | GitHub account or organization |
@@ -32,7 +30,7 @@ The app is served at `http://localhost:5173`. Without GitHub settings, the app c
 | `MEDIA_MAX_BUNDLE_SIZE_MB` | No | Photo bundle capacity, 1–100 MB; defaults to 100 |
 | `MEDIA_TIMEZONE` | No | Display/configuration preference; defaults to `Asia/Kolkata` |
 
-Never commit `.env`. Never use a `VITE_`, `NEXT_PUBLIC_` or other browser-exposed prefix for a secret. The password itself is not stored; only its scrypt hash is configured.
+Never commit `.env`. Never use a `VITE_`, `NEXT_PUBLIC_` or other browser-exposed prefix for a secret. User-ID-only sign-in is not strong authentication: anyone who can reach the site and knows the configured ID can sign in. Use this only when that exposure is acceptable; keep `AUTH_SECRET` private to protect session cookies.
 
 ## GitHub repository setup and permissions
 
@@ -77,7 +75,7 @@ npm run preview
 Deploy this folder as its own Vercel project:
 
 1. Import the Git repository into a new Vercel project.
-2. Set **Root Directory** to `media-manager`.
+2. Set **Root Directory** to the repository root.
 3. Add the environment variables above to the appropriate Vercel environment.
 4. Deploy and open the project URL.
 

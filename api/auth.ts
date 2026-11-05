@@ -1,17 +1,9 @@
-import { scryptSync, timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual } from 'node:crypto';
 import { checkMutation, clearSessionCookie, createSession, json, readSession, vercelHandler } from '../src/server/http.ts';
 
 const attempts = new Map<string, { count: number; resetAt: number }>();
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
-
-function validPassword(password: string, encoded: string): boolean {
-  const [scheme, salt, expectedHex] = encoded.split('$');
-  if (scheme !== 'scrypt' || !salt || !/^[a-f0-9]{128}$/i.test(expectedHex ?? '')) return false;
-  const expected = Buffer.from(expectedHex, 'hex');
-  const actual = scryptSync(password, salt, expected.length);
-  return expected.length === actual.length && timingSafeEqual(expected, actual);
-}
 
 function originAllowed(request: Request): boolean {
   const origin = request.headers.get('origin');
@@ -46,7 +38,7 @@ async function handle(request: Request): Promise<Response> {
   }
   if (record && record.resetAt <= Date.now()) attempts.delete(ip);
 
-  let body: { username?: unknown; password?: unknown };
+  let body: { username?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -54,29 +46,22 @@ async function handle(request: Request): Promise<Response> {
   }
 
   const expectedUsername = process.env.ADMIN_USERNAME;
-  const passwordHash = process.env.ADMIN_PASSWORD_HASH;
-  if (!expectedUsername || !passwordHash || !process.env.AUTH_SECRET || process.env.AUTH_SECRET.length < 32) {
+  if (!expectedUsername || !process.env.AUTH_SECRET || process.env.AUTH_SECRET.length < 32) {
     return json({ error: 'Authentication is not configured. Set the required server environment variables.' }, 503);
   }
-  if (typeof body.username !== 'string' || typeof body.password !== 'string' || body.password.length > 1024) {
-    return json({ error: 'Invalid username or password.' }, 401);
+  if (typeof body.username !== 'string' || body.username.length === 0 || body.username.length > 256) {
+    return json({ error: 'Invalid user ID.' }, 401);
   }
 
   const usernameMatches = body.username.length === expectedUsername.length
     && timingSafeEqual(Buffer.from(body.username), Buffer.from(expectedUsername));
-  let passwordMatches = false;
-  try {
-    passwordMatches = validPassword(body.password, passwordHash);
-  } catch {
-    return json({ error: 'Authentication configuration is invalid.' }, 503);
-  }
-  if (!usernameMatches || !passwordMatches) {
+  if (!usernameMatches) {
     const current = attempts.get(ip);
     attempts.set(ip, {
       count: (current?.count ?? 0) + 1,
       resetAt: current?.resetAt && current.resetAt > Date.now() ? current.resetAt : Date.now() + LOCKOUT_MS,
     });
-    return json({ error: 'Invalid username or password.' }, 401);
+    return json({ error: 'Invalid user ID.' }, 401);
   }
 
   attempts.delete(ip);

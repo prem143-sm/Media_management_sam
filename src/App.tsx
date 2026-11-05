@@ -64,7 +64,6 @@ export function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [section, setSection] = useState<Section>('overview');
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [bundle, setBundle] = useState<{ id: string; photoCount: number; sizeBytes: number; photos: Photo[] } | null>(null);
@@ -140,10 +139,9 @@ export function App() {
     setLoginLoading(true);
     setError('');
     try {
-      const result = await api<Session>('/api/auth', { method: 'POST', body: JSON.stringify({ username, password }) });
+      const result = await api<Session>('/api/auth', { method: 'POST', body: JSON.stringify({ username }) });
       setCsrfToken(result.csrf ?? '');
       setSession(result);
-      setPassword('');
       await refresh();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Sign-in failed.');
@@ -289,8 +287,7 @@ export function App() {
           <p className="muted">A private space for the moments worth keeping.</p>
           {error && <div className="notice error-notice" role="alert">{error}</div>}
           <form onSubmit={login} className="login-form">
-            <label>Username<input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} required /></label>
-            <label>Password<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
+            <label>User ID<input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} required /></label>
             <button className="primary-button wide-button" disabled={loginLoading}>{loginLoading ? 'Signing in…' : 'Sign in'} <span>→</span></button>
           </form>
           <div className="login-foot"><span className="status-dot" /> Encrypted session · Admin access only</div>

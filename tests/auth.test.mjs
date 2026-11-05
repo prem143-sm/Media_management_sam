@@ -1,6 +1,5 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
-import { scryptSync } from 'node:crypto';
 import { createServer } from 'vite';
 
 let server;
@@ -11,7 +10,6 @@ let csrf;
 before(async () => {
   process.env.AUTH_SECRET = 'test-secret-with-more-than-thirty-two-characters';
   process.env.ADMIN_USERNAME = 'media-admin';
-  process.env.ADMIN_PASSWORD_HASH = `scrypt$test-salt$${scryptSync('test-password-123', 'test-salt', 64).toString('hex')}`;
   server = await createServer({ configFile: 'vite.config.ts', server: { middlewareMode: true } });
   ({ default: handler } = await server.ssrLoadModule('/api/auth.ts'));
 });
@@ -20,7 +18,6 @@ after(async () => {
   await server?.close();
   delete process.env.AUTH_SECRET;
   delete process.env.ADMIN_USERNAME;
-  delete process.env.ADMIN_PASSWORD_HASH;
 });
 
 async function request(method, body, headers = {}) {
@@ -34,13 +31,13 @@ async function request(method, body, headers = {}) {
   }));
 }
 
-test('invalid credentials are rejected', async () => {
-  const response = await request('POST', { username: 'media-admin', password: 'wrong-password-123' });
+test('an incorrect user ID is rejected', async () => {
+  const response = await request('POST', { username: 'not-the-admin' });
   assert.equal(response.status, 401);
 });
 
-test('a valid login creates a protected session and logout expires its cookie', async () => {
-  const login = await request('POST', { username: 'media-admin', password: 'test-password-123' });
+test('the configured user ID logs in and logout expires its session cookie', async () => {
+  const login = await request('POST', { username: 'media-admin' });
   const data = await login.json();
   assert.equal(login.status, 200);
   assert.equal(data.authenticated, true);
@@ -78,7 +75,7 @@ test('sessions expire after eight inactive hours', async () => {
   Date.now = () => now() - 9 * 60 * 60 * 1000;
   let expiredCookie;
   try {
-    const login = await request('POST', { username: 'media-admin', password: 'test-password-123' });
+    const login = await request('POST', { username: 'media-admin' });
     expiredCookie = login.headers.get('set-cookie').split(';')[0];
   } finally {
     Date.now = now;
@@ -99,7 +96,7 @@ test('the Vercel Node request adapter handles parsed JSON bodies', async () => {
     method: 'POST',
     url: '/api/auth',
     headers: { host: 'localhost:3000', 'content-type': 'application/json' },
-    body: { username: 'media-admin', password: 'test-password-123' },
+    body: { username: 'media-admin' },
   }, response);
   assert.equal(response.statusCode, 200);
   assert.equal(JSON.parse(response.body).authenticated, true);
