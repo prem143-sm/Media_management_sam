@@ -211,6 +211,36 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .photo-details h2 { max-width: 560px; overflow: hidden; margin: 6px 0; font: 600 14px Manrope,sans-serif; text-overflow: ellipsis; white-space: nowrap; }
 .photo-details p { margin: 0; color: #89899c; font-size: 10px; }
 .danger-button { min-height: 34px; padding: 0 12px; border: 1px solid rgba(249,125,155,.2); border-radius: 8px; color: #ff9ab3; background: rgba(199,77,111,.1); font-size: 10px; cursor: pointer; }
+.danger-button:disabled, .secondary-button:disabled { opacity: .5; cursor: not-allowed; }
+.library-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 17px; }
+.playlist-select { display: flex; align-items: center; gap: 8px; color: #9695a8; font-size: 10px; white-space: nowrap; }
+.playlist-select select { max-width: 170px; height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; color: #dedbea; background: #151621; font-size: 10px; }
+.managed-photo { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #141520; }
+.managed-photo-preview { display: block; width: 100%; aspect-ratio: 1; overflow: hidden; padding: 0; border: 0; background: #090a13; cursor: zoom-in; }
+.managed-photo-preview img { width: 100%; height: 100%; object-fit: cover; transition: transform .2s ease; }
+.managed-photo-preview:hover img { transform: scale(1.035); }
+.managed-file-info { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 7px 8px; padding: 9px; }
+.managed-file-info > span { overflow: hidden; color: #d3d0df; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.managed-file-info small { color: #838396; font-size: 8px; }
+.managed-file-info .danger-button { grid-column: 1 / -1; min-height: 27px; }
+.managed-music-list { overflow: hidden; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px; background: rgba(20,21,33,.82); }
+.managed-track { display: flex; min-width: 0; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid rgba(238,236,255,.06); }
+.managed-track:first-child { border-top: 0; }
+.managed-track .track-play { flex: 0 0 auto; }
+.managed-track .track-main { flex: 1; }
+.managed-track audio { width: min(250px, 30vw); height: 32px; }
+.managed-track .danger-button { min-height: 30px; }
+.track-open { flex: 0 0 auto; }
+.summary-preview { display: flex; gap: 8px; margin-top: 20px; }
+.summary-preview button { flex: 1; aspect-ratio: 1; overflow: hidden; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: #090a13; cursor: zoom-in; }
+.summary-preview img { width: 100%; height: 100%; object-fit: cover; }
+.playlist-counts { display: grid; gap: 8px; margin-top: 20px; }
+.playlist-counts > div { display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 9px; background: rgba(255,255,255,.02); }
+.playlist-counts > div > span { color: #c0aeff; font-size: 18px; }
+.playlist-counts strong { color: #d9d7e5; font-size: 10px; font-weight: 600; text-transform: capitalize; }
+.playlist-counts small { color: #808194; font-size: 9px; }
+.upload-notice { border-color: rgba(157,132,237,.25); color: #c9b9ff; background: rgba(123,97,195,.1); }
+.library-summary-card { min-height: 250px !important; }
 
 @media (min-width: 1600px) { .content { padding-top: 43px; } .stat-card { padding: 21px; } }
 @media (max-width: 1050px) {
@@ -280,4 +310,10 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
   .manifest-list > div { align-items: flex-start; flex-direction: column; }
   .footer { flex-direction: column; }
   .photo-details { align-items: flex-start; flex-direction: column; }
+  .page-heading:has(.playlist-select) { flex-wrap: wrap; }
+  .managed-track { flex-wrap: wrap; gap: 8px; }
+  .managed-track .track-main { min-width: calc(100% - 55px); }
+  .managed-track audio { width: calc(100% - 92px); }
+  .track-open { margin-left: auto; }
+  .library-toolbar .search-box { width: 100%; }
 }
