@@ -27,11 +27,16 @@ type StagedUpload = {
 };
 
 const playlists = ['Sams-Playlist', 'Prems-Playlist'];
-const photoAccept = '.jpg,.jpeg,.png,.webp,.gif';
+const photoAccept = 'image/*';
 const audioAccept = '.mp3,.wav,.m4a,.ogg,.flac,.aac';
 
 function randomKey(): string {
   return crypto.randomUUID().replace(/-/g, '');
+}
+
+function isImageFile(file: File): boolean {
+  return file.type.startsWith('image/')
+    || /\.(avif|bmp|gif|jpe?g|png|tiff?|webp)$/i.test(file.name);
 }
 
 function photoSlug(name: string): string {
@@ -161,13 +166,16 @@ export function App() {
       for (const [index, source] of files.entries()) {
         let file = source;
         if (section === 'photos') {
-          if (!/\.(jpe?g|png|webp|gif)$/i.test(source.name)) throw new Error(`${source.name}: choose a JPG, PNG, WebP or GIF image.`);
+          if (!isImageFile(source)) throw new Error(`${source.name}: choose a supported image file.`);
+          if (!source.size || source.size > 100 * 1024 * 1024) throw new Error(`${source.name}: files must be between 1 byte and 100 MB.`);
           const converted = await convertPhoto(source);
           file = new File([converted], `${Date.now()}-${index}-${converted.name}`, { type: converted.type });
         } else if (!/\.(mp3|wav|m4a|ogg|flac|aac)$/i.test(source.name)) {
           throw new Error(`${source.name}: choose a supported audio file.`);
         }
-        if (!file.size || file.size > 100 * 1024 * 1024) throw new Error(`${source.name}: files must be between 1 byte and 100 MB.`);
+        if (section === 'music' && (!file.size || file.size > 100 * 1024 * 1024)) {
+          throw new Error(`${source.name}: files must be between 1 byte and 100 MB.`);
+        }
         const stagingPath = `staging/${randomKey()}`;
         await upload(stagingPath, file, {
           access: 'private',
@@ -192,7 +200,9 @@ export function App() {
       await refresh();
     } catch (reason) {
       const text = reason instanceof Error ? reason.message : 'Upload failed.';
-      setError(text);
+      setError(text.includes('Failed to retrieve the client token')
+        ? 'Upload storage could not issue a token. Check BLOB_READ_WRITE_TOKEN and the upload-token function configuration in Vercel.'
+        : text);
       setQueue([]);
       await Promise.allSettled(staged.map((item) =>
         api(`/api/media?kind=staging&id=${encodeURIComponent(item.stagingPath)}`, { method: 'DELETE' }),
